@@ -1,0 +1,45 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = 'thousifk/maven'
+        DOCKER_TAG = 'latest'
+        DOCKER_CREDENTIALS_ID = '774dd4b0-e16e-4d78-a04c-ad42a73043c1'
+        GIT_REPO = 'https://github.com/Thousif10/maven_docker.git'
+        GIT_BRANCH = 'main'
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: "${GIT_BRANCH}", url: "${GIT_REPO}"
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh 'docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .'
+                }
+            }
+        }
+
+        stage('testing') {
+            steps {
+                script {
+                    sh 'docker run ${DOCKER_IMAGE}'
+                }
+            }  // Closing the 'script' block for the 'testing' stage
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry('', "${DOCKER_CREDENTIALS_ID}") {
+                        sh 'docker push ${DOCKER_IMAGE}:${DOCKER_TAG}'
+                    }
+                }
+            }
+        }
+    }
+}
